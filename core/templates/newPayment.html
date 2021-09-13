@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+
+#stripeBtnLabel {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 16px;
+  font-variant: normal;
+  padding: 0;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  font-weight: 500;
+  display: block;
+}
+
+#stripeBtn {
+  border: none;
+  border-radius: 4px;
+  outline: none;
+  text-decoration: none;
+  color: #fff;
+  background: #32325d;
+  white-space: nowrap;
+  display: inline-block;
+  height: 40px;
+  line-height: 40px;
+  box-shadow: 0 4px 6px rgba(50, 50, 93, .11), 0 1px 3px rgba(0, 0, 0, .08);
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-decoration: none;
+  -webkit-transition: all 150ms ease;
+  transition: all 150ms ease;
+  float: left;
+  width: 100%
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, .10), 0 3px 6px rgba(0, 0, 0, .08);
+  background-color: #43458b;
+}
+
+.stripe-form {
+  padding: 5px 30px;
+}
+
+#card-errors {
+  height: 20px;
+  padding: 4px 0;
+  color: #fa755a;
+}
+
+.stripe-form-row {
+  width: 100%;
+  float: left;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+/**
+ * The CSS shown here will not be introduced in the Quickstart guide, but shows
+ * how you can use CSS to style your Element's container.
+ */
+.StripeElement {
+  box-sizing: border-box;
+
+  height: 40px;
+
+  padding: 10px 12px;
+
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background-color: white;
+
+  box-shadow: 0 1px 3px 0 #e6ebf1;
+  -webkit-transition: box-shadow 150ms ease;
+  transition: box-shadow 150ms ease;
+}
+
+.StripeElement--focus {
+  box-shadow: 0 1px 3px 0 #cfd7df;
+}
+
+.StripeElement--invalid {
+  border-color: #fa755a;
+}
+
+.StripeElement--webkit-autofill {
+  background-color: #fefde5 !important;
+}
+
+.current-card-form {
+  display: none;
+}
+
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+
+  <main >
+    <div class="container wow fadeIn">
+
+      <h2 class="my-5 h2 text-center">Payment</h2>
+
+      <div class="row">
+
+        <div class="col-md-12 mb-4">
+          <div class="card">
+
+
+              <div style="padding: 5px 30px;">
+                <div class="custom-control custom-checkbox">
+                  <input type="checkbox" class="custom-control-input" name="use_default_card" id="use_default_card">
+                  <label class="custom-control-label" for="use_default_card">Use default card:
+                    **** **** **** {{ card.last4 }}
+                  <span>Exp: {{ card.exp_month }}/{{ card.exp_year }}</span></label>
+                </div>
+              </div>
+
+
+            <div class="current-card-form">
+              <form action="." method="post" class="stripe-form">
+          {% csrf_token %}
+                   <form id="paymentForm">
+  <div class="form-group">
+    <label for="email">Email Address</label>
+    <input type="email" id="email-address" required />
+  </div>
+  <div class="form-group">
+    <label for="amount">Amount</label>
+    <input type="tel" id="amount" required />
+  </div>
+  <div class="form-group">
+    <label for="first-name">First Name</label>
+    <input type="text" id="first-name" />
+  </div>
+  <div class="form-group">
+    <label for="last-name">Last Name</label>
+    <input type="text" id="last-name" />
+  </div>
+  <div class="form-submit">
+    <button type="submit" onclick="payWithPaystack()"> Pay </button>
+  </div>
+</form>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+              </form>
+            </div>
+
+            <div class="new-card-form">
+
+            </div>
+
+          </div>
+        </div>
+
+        {% include "order_snippet.html" %}
+
+      </div>
+
+    </div>
+  </main>
+
+<script>
+const paymentForm = document.getElementById('paymentForm');
+paymentForm.addEventListener("submit", payWithPaystack, false);
+function payWithPaystack(e) {
+  e.preventDefault();
+  let plan= ''
+    let currency = 'NGN'
+  let obj = {
+    key: 'pk_test_cad26d8ba86f111f5e12aa638bf7f43a460a97c2', // Replace with your public key
+    email: '{{ payment.email }}',
+    amount: {{ payment.amount_value }},
+    ref: '{{ payment.ref }}', // generates a pseudo-unique reference. Please replace with a reference you generated. Or remove the line entirely so our API will generate one for you
+    // label: "Optional string that replaces customer email"
+    onClose: function(){
+      alert('Window closed.');
+    },
+    callback: function(response){
+      let message = 'Payment complete! Reference: ' + response.reference;
+      alert(message);
+      window.location.href= '{% url 'verify_payment' payment.ref %}'
+    }
+
+
+  }
+
+  if (Boolean(currency)){
+      obj.currency = currency.toUpperCase()
+  }
+  if(Boolean(currency)) {
+  obj.plan = plan}
+
+
+  let handler = PaystackPop.setup(
+      obj
+  );
+  handler.openIframe();
+}
+</script>
+
+
+{% endblock content %}
+
